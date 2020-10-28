@@ -15,7 +15,16 @@ def load_model(path):
     model.eval()
     return model
 
-width = 1024
+def predict_patches(model, x, patch=256):
+    c, h, w = x.size()
+    p = torch.zeros_like(x)
+    for row in range(0, h, patch):
+        for col in range(0, w, patch):
+            pass
+
+
+width = 512
+patch = 256
 transform = tfs.ToTensor()
 model = load_model('U2NETP_STPB_11.7MAE.pt')
 
@@ -30,6 +39,9 @@ if file is not None:
         pil_img = pil_img.resize((width, int(h/w*width)))
     st.image(pil_img, use_column_width=True)
     x = transform(pil_img)
+    c, h, w = x.size()
+    p = torch.zeros_like(x)
+
     p = model(x.unsqueeze(0))[0].squeeze(0)
     count = int(round(int(p.sum())/100)) # model is trained with 100x higher values
     st.header("I'm counting " + str(count) + " people in this photo.")
