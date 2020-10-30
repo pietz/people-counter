@@ -1,5 +1,5 @@
 import streamlit as st
-#import numpy as np
+import numpy as np
 from PIL import Image
 import torch
 import torch.nn as nn
@@ -25,23 +25,28 @@ def predict_patches(model, x, split=2):
     return p
 
 
-width = 720
 transform = tfs.ToTensor()
-model = load_model('U2NETP_STPB_11.7MAE.pt')
+model = load_model('U2NETP_STPB_8.9MAE.pt')
 
 
 st.title('Let me count those people for you')
-file = st.file_uploader('Choose a photo of people')
+file = st.sidebar.file_uploader('Choose a photo of people')
 
 if file is not None:
     pil_img = Image.open(file).convert('RGB')
+    st.sidebar.image(pil_img, use_column_width=True)
+    width = st.sidebar.number_input('Image Width', 240, 1024, 720)
     if pil_img.size[0] > width:
         w, h = pil_img.size
         pil_img = pil_img.resize((width, int(h/w*width)))
-    st.image(pil_img, use_column_width=True)
     x = transform(pil_img)
     c, h, w = x.size()
-    p = model(x.unsqueeze(0))[0].squeeze(0)
+    with torch.no_grad():
+        p = model(x.unsqueeze(0))[0].squeeze(0).squeeze(0)
     #p = predict_patches(model, x, 2)
     count = int(round(int(p.sum())/100)) # model is trained with 100x higher values
+    p = (p-p.min()) / (p.max()-p.min()) * 255
+    p = p.detach().numpy().astype(np.uint8)
+    p_img = Image.fromarray(p)
+    st.image(p_img)
     st.header("I'm counting " + str(count) + " people in this photo.")
